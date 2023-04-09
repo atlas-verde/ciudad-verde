@@ -4,7 +4,7 @@
 
 
 # PACKAGES
-library(dbplyr)
+library(dplyr)
 library(ggplot2)
 library(plotly)
 library(sf)
@@ -366,7 +366,11 @@ ui <- fluidPage(
   ),
   
   navbarPage(
-    title = "Ciudad Verde",
+    title = tags$span(
+      tags$a(href = "https://atlasverde.net/", target = "_blank", "Atlas de servicios ecosistémicos de la GAM"),
+      " - ",
+      "Ciudad verde"
+    ),
     theme = shinytheme("lumen"),
     
     # Pilar Ciudad verde: Sostenibilidad
@@ -397,6 +401,7 @@ ui <- fluidPage(
           mainPanel(
             fluidRow(h3(strong(textOutput("header_urbanbiodiversity")))),
             fluidRow(withSpinner(leafletOutput("map_urbanbiodiversity"))),
+            fluidRow(h1(column(width = 12))),
             fluidRow(withSpinner(plotlyOutput("barplot_urbanbiodiversity")))
           )              
         )
@@ -427,6 +432,7 @@ ui <- fluidPage(
           mainPanel(
             fluidRow(h3(strong(textOutput("header_environmentalquality")))),
             fluidRow(withSpinner(leafletOutput("map_environmentalquality"))),
+            fluidRow(h1(column(width = 12))),
             fluidRow(withSpinner(plotlyOutput("barplot_environmentalquality")))
           )              
         )
@@ -454,6 +460,7 @@ ui <- fluidPage(
           mainPanel(
             fluidRow(h3(strong(textOutput("header_smartcity")))),
             fluidRow(withSpinner(leafletOutput("map_smartcity"))),
+            fluidRow(h1(column(width = 12))),
             fluidRow(withSpinner(plotlyOutput("barplot_smartcity")))
           )              
         )
@@ -488,6 +495,7 @@ ui <- fluidPage(
           mainPanel(
             fluidRow(h3(strong(textOutput("header_recreation")))),
             fluidRow(withSpinner(leafletOutput("map_recreation"))),
+            fluidRow(h1(column(width = 12))),
             fluidRow(withSpinner(plotlyOutput("barplot_recreation")))
           )          
         )
@@ -520,6 +528,7 @@ ui <- fluidPage(
           mainPanel(
             fluidRow(h3(strong(textOutput("header_sustainableurbandevelopment")))),
             fluidRow(withSpinner(leafletOutput("map_sustainableurbandevelopment"))),
+            fluidRow(h1(column(width = 12))),
             fluidRow(withSpinner(plotlyOutput("barplot_sustainableurbandevelopment")))
           )          
         )
@@ -527,6 +536,8 @@ ui <- fluidPage(
     )
   ),
   
+  fluidRow(h1(column(width = 12))),
+  fluidRow(h1(column(width = 12))),    
   h3(class = "texto_agradecimiento_logos_1", strong("Acerca del Atlas de Servicios Ecosistémicos de la GAM")),
   h3(class = "texto_agradecimiento_logos-2", "El Atlas de Servicios Ecosistémicos de la GAM es producto de la cooperación entre los Gobiernos de Alemania y Costa Rica en el marco del proyecto Biodiver_City – Establecimiento de Corredores Biológicos Interurbanos con el fin de promover el desarrollo urbano centrado en los beneficios de la naturaleza. El instrumento fue desarrollado por el CATIE, por encargo de la Cooperación alemana para el desarrollo GIZ, bajo una estrecha articulación con el MINAE, CENIGA, SINAC y con el apoyo técnico del Instituto de Estudios Ambientales Helmholtz, UFZ."),
   fluidRow(h1(column(width = 12))),
