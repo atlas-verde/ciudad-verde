@@ -88,6 +88,69 @@ create_map <-
       addFullscreenControl()
   }
 
+# Create biological connectivity map
+create_map_connectivity <-
+  function() {
+    leaflet() |>
+      addProviderTiles(providers$OpenStreetMap.Mapnik, group = "Mapa de calles (OpenStreetMap)") |>
+      addProviderTiles(providers$CartoDB.DarkMatter, group = "Mapa oscuro (CartoDB Dark Matter)") |>
+      addProviderTiles(providers$Stamen.TonerLite, group = "Mapa claro (Stamen Toner Lite)") |>
+      addProviderTiles(providers$Esri.WorldImagery, group = "Imágenes satelitales (ESRI World Imagery)") |>
+      addWMSTiles(
+        WMS_CATIE_URL,
+        layers = WMS_PROBABILITY_BIOLOGICAL_CONNECTIVITY_LAYER,
+        options = WMSTileOptions(
+          format = "image/png",
+          transparent = TRUE,
+          crs = "EPSG:4326"
+        ),
+        group = INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY
+      ) |>
+      addWMSLegend(
+        layerId = "legend_probability_biological_connectivity",
+        position = "topright",
+        uri = paste0(
+          WMS_CATIE_URL, "?",
+          "REQUEST=GetLegendGraphic&VERSION=1.0.0", 
+          "&FORMAT=image/png&WIDTH=20&HEIGHT=15&LAYER=probabilidad-conectividad-biologica"
+        )
+      ) |>
+      addPolygons(
+        data = cantons,
+        layerId = ~canton,
+        fillOpacity = 0.0,
+        stroke = TRUE,
+        color = "black",
+        weight = 2,
+        popup = paste(
+          paste("<strong>Cantón:</strong>",  cantons[[COLUMN_CANTON_NAME]])
+        ),
+        label = paste(
+          paste("Cantón:",  cantons[[COLUMN_CANTON_NAME]])
+        ),
+        group = "Límite cantonal"
+      ) |>      
+      addLayersControl(
+        baseGroups = c(
+          "Mapa de calles (OpenStreetMap)",
+          "Mapa oscuro (CartoDB Dark Matter)",
+          "Mapa claro (Stamen Toner Lite)",
+          "Imágenes satelitales (ESRI World Imagery)"
+        ),
+        overlayGroups = c(
+          INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY,
+          "Límite cantonal"
+        ),
+        position = "bottomleft",
+        options = layersControlOptions(collapsed = FALSE)
+      ) |>      
+      addScaleBar(position = "bottomleft", options = scaleBarOptions(imperial = FALSE)) |>
+      addMouseCoordinates() |>
+      addSearchOSM() |>
+      addResetMapButton() |>
+      addFullscreenControl()
+  }
+
 # Create barplot
 create_barplot <-
   function(indicator_column, indicator_geom_col_label, indicator_y_axis_label, indicator_geom_col_fill, indicator_unit) {
@@ -132,10 +195,14 @@ create_barplot <-
 # DATASETS
 
 # Data sources
+
+# Cantons
 DSN_CANTONS <- "data/metricas-ciudad-verde.geojson"
 
-# Cantons and their indicators of ecosystem services
 cantons <- st_read(dsn = DSN_CANTONS, quiet = TRUE)
+
+WMS_CATIE_URL <- "https://catie.info/geoserver/atlasverde/wms"
+WMS_PROBABILITY_BIOLOGICAL_CONNECTIVITY_LAYER <- "probabilidad-conectividad-biologica"
 
 # Data cleaning
 cantons$porc_asp <- as.numeric(cantons$porc_asp)
@@ -166,6 +233,7 @@ COLUMN_POPULATIONINFORMALSETTLEMENTS_PERCENTAGE <- cantons$porc_ai
 INDICATOR_WILDPROTECTEDAREAS_PERCENTAGE <- "Porcentaje de áreas de protección natural"
 INDICATOR_GREENBLUEINFRAESTRUCTURE_PERCENTAGE <- "Porcentaje de infraestructura verde y azul"
 INDICATOR_RIVERSIDEVEGETATION_PERCENTAGE <- "Porcentaje de área ribereña cubierta por vegetación"
+INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY <- "Probabilidad de conectividad biológica"
 
 INDICATOR_CARBON_STOCK <- "Almacenamiento y secuestro de carbono"
 INDICATOR_CARBON_DENSITY <- "Densidad de almacenamiento de carbono"
@@ -392,7 +460,8 @@ ui <- fluidPage(
                 choices = c(
                   INDICATOR_WILDPROTECTEDAREAS_PERCENTAGE,
                   INDICATOR_GREENBLUEINFRAESTRUCTURE_PERCENTAGE,
-                  INDICATOR_RIVERSIDEVEGETATION_PERCENTAGE
+                  INDICATOR_RIVERSIDEVEGETATION_PERCENTAGE,
+                  INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY
                 ),
                 selected = INDICATOR_WILDPROTECTEDAREAS_PERCENTAGE
               )
@@ -571,6 +640,8 @@ server <- function(input, output) {
     INDICATOR_GREENBLUEINFRAESTRUCTURE_PERCENTAGE
   } else if (input$radiobuttons_indicators_urbanbiodiversity == INDICATOR_RIVERSIDEVEGETATION_PERCENTAGE) {
     INDICATOR_RIVERSIDEVEGETATION_PERCENTAGE
+  } else if (input$radiobuttons_indicators_urbanbiodiversity == INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY) {
+    INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY
   })
   
   # Environmental quality indicators header
@@ -634,6 +705,8 @@ server <- function(input, output) {
         PALETTE_RIVERSIDEVEGETATION_PERCENTAGE,
         UNIT_RIVERSIDEVEGETATION_PERCENTAGE
       )            
+    } else if (input$radiobuttons_indicators_urbanbiodiversity == INDICATOR_PROBABILITY_BIOLOGICAL_CONNECTIVITY) {
+      create_map_connectivity()
     }
   })
   
@@ -849,7 +922,33 @@ server <- function(input, output) {
         UNIT_POPULATIONINFORMALSETTLEMENTS_PERCENTAGE
       )
     }        
-  })  
+  })
+  
+  # # Initial "selected" canton
+  # selected_canton <- reactiveVal("San José")
+  # 
+  # # Capture click event in cantons layer for zooming and changing styles
+  # observeEvent(input$map_urbanbiodiversity_click, {
+  #   print("a")
+  #   click_data <- input$map_urbanbiodiversity_click
+  # 
+  #   if (!is.null(click_data)) {
+  #     print("b")
+  #     selected_canton(click_data$id)
+  #     print(click_data$id)
+  # 
+  #     # Zoom to selected polygon
+  #     selected_canton_polygon <- cantons |> filter(canton == click_data$id)
+  #     leafletProxy("map_urbanbiodiversity") |>
+  #       fitBounds(
+  #         lng1 = min(st_bbox(selected_canton_polygon)[["xmin"]]),
+  #         lat1 = min(st_bbox(selected_canton_polygon)[["ymin"]]),
+  #         lng2 = max(st_bbox(selected_canton_polygon)[["xmax"]]),
+  #         lat2 = max(st_bbox(selected_canton_polygon)[["ymax"]])
+  #       )
+  # 
+  #   }
+  # })
   
 }
 
